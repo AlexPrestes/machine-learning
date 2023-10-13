@@ -3,16 +3,35 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, random_split
 
-class LinearRegress(nn.Module):
-    def __init__(self, input_layer=1):
+class MLP(nn.Module):
+    def __init__(self, input_layer=1, hidden_layer=(5, )):
         super().__init__()
-        self.layer = nn.Linear(input_layer, 1)
-        self.optimizer = torch.optim.SGD(self.parameters(), lr=1e-1)
+        self.activation_fn = nn.ReLU()
         self.loss_fn = nn.MSELoss()
+        self.input_layer = input_layer
+        self.hidden_layer = hidden_layer
+        self._make_mlp()
+        self.optimizer = torch.optim.SGD(self.parameters(), lr=1e-1)
 
     def forward(self, x):
         y = self.layer(x)
         return y
+    
+    def _make_mlp(self):
+        list_layer = []
+        list_layer.append( (self.input_layer, self.hidden_layer[0]) )
+        for i in range(len(self.hidden_layer)-1):
+            size = (self.hidden_layer[i], self.hidden_layer[i+1])
+            list_layer.append(size)
+
+        layers = []
+        for l in list_layer:
+            layers.append(nn.Linear(*l))
+            layers.append(self.activation_fn)
+        layers.append( nn.Linear(self.hidden_layer[-1], 1) )
+
+        print(layers)
+        self.layer = nn.Sequential( *layers )
 
     def _split_train_val(self, dataset_training, train_rate = 0.7):
         n = len(dataset_training)
